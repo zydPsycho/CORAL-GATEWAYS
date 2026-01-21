@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORAL GATEWAYS | Coral GateWays</title>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root { --coral: #ff5f5f; --bg: #030303; }
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background-color: var(--bg); 
+            color: #e2e8f0; 
+            background-image: radial-gradient(circle at 50% -20%, #1a1a1a 0%, #030303 80%);
+            overflow-x: hidden;
+        }
+
+        .glass { 
+            background: rgba(255, 255, 255, 0.02); 
+            backdrop-filter: blur(25px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+        }
+
+        .glass-panel {
+            background: #050505;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .tier-card { 
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+            cursor: pointer; 
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .tier-img {
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: grayscale(100%) brightness(0.6) contrast(1.2);
+            transform: scale(1);
+        }
+
+        .tier-card:hover .tier-img {
+            filter: grayscale(0%) brightness(1) contrast(1);
+            transform: scale(1.1);
+        }
+
+        .tier-card:hover { 
+            transform: translateY(-10px); 
+            border-color: var(--coral); 
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 95, 95, 0.15);
+        }
+
+        .act-pill { transition: all 0.3s ease; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+        .act-selected { background: var(--coral) !important; border-color: var(--coral); color: white; box-shadow: 0 0 15px rgba(255, 95, 95, 0.3); }
+
+        .logistics-card { transition: all 0.3s ease; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+        .logistics-selected { background: rgba(255, 255, 255, 0.08); border-color: var(--coral); }
+        .logistics-selected h4 { color: var(--coral); }
+
+        input[type="file"] { display: none; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--coral); }
+        
+        input::placeholder { color: rgba(255,255,255,0.15); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .animate-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* Custom Review Slide Styles */
+        .review-img-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .review-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(0.5);
+            transition: filter 0.5s ease;
+        }
+        .review-img-container:hover img {
+            filter: grayscale(0);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [menuOpen, setMenuOpen] = useState(false);
+            const [activeTier, setActiveTier] = useState(null);
+            const [bookingStep, setBookingStep] = useState('plan');
+            const [currentSlide, setCurrentSlide] = useState(0);
+            
+            const [travelers, setTravelers] = useState(1);
+            const [selectedActs, setSelectedActs] = useState([]);
+            const [logisticsMode, setLogisticsMode] = useState('inclusive');
+            const [contact, setContact] = useState({ name: '', phone: '' });
+            const [docs, setDocs] = useState({});
+
+            // NEW: Review State
+            const [reviewIdx, setReviewIdx] = useState(0);
+            const [reviews, setReviews] = useState([
+                { 
+                    id: 1, 
+                    user: "ADITYA V.", 
+                    rating: 5, 
+                    text: "THE CRYSTAL LAGOONS OF KAVARATTI ARE BEYOND WORDS. AN UNTOUCHED PARADISE.", 
+                    drawback: "LIMITED NETWORK CONNECTIVITY.", 
+                    img: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200", 
+                    date: "JAN 2026" 
+                }
+            ]);
+            const [newReview, setNewReview] = useState({ user: '', rating: 5, text: '', drawback: '', img: null });
+
+            useEffect(() => { lucide.createIcons(); }, [menuOpen, activeTier, bookingStep, selectedActs, docs, logisticsMode, currentSlide, reviewIdx, reviews]);
+
+            const heroSlides = [
+                {
+                    img: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1600&q=80",
+                    title: "Crystal Clear Lagoons",
+                    subtitle: "Kavaratti – The Heart of Lakshadweep"
+                },
+                {
+                    img: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=1600&q=80",
+                    title: "Vibrant Coral Reefs",
+                    subtitle: "World-Class Diving & Snorkeling"
+                },
+                {
+                    img: "https://images.unsplash.com/photo-1590523278191-995cbcda646b?auto=format&fit=crop&w=1600&q=80",
+                    title: "Untouched Beaches",
+                    subtitle: "Pure Serenity Awaits"
+                }
+            ];
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+                }, 5000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const packages = [
+                { id: 1, name: "Atoll Explorer", price: 8900, tier: "Essential", desc: "Entry-level access to the outer Kavaratti reefs.", img: "https://images.unsplash.com/photo-1589979481223-deb893043163?w=800&q=80" },
+                { id: 2, name: "Lagoon Premier", price: 17500, tier: "Standard", desc: "Full lagoon access with guided boat navigation.", img: "https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?w=800&q=80" },
+                { id: 3, name: "Coral Elite", price: 34000, tier: "Premium", desc: "Unrestricted access + private marine biologist.", img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800&q=80" }
+            ];
+
+            const activities = [
+                { id: 'scuba', name: 'Scuba Diving', price: 4500, icon: 'anchor' },
+                { id: 'snork', name: 'Snorkeling', price: 1500, icon: 'waves' },
+                { id: 'kayak', name: 'Kayaking', price: 800, icon: 'navigation' },
+                { id: 'camp', name: 'Beach Campfire', price: 2500, icon: 'flame' },
+                { id: 'grill', name: 'Live Fish Grill', price: 1200, icon: 'utensils' }
+            ];
+
+            const heritageFee = 1800;
+            const permitBatchSize = 6;
+            const permitCount = Math.ceil(travelers / permitBatchSize);
+            const totalPermitFiling = permitCount * 500;
+            const logisticsRate = 5500;
+            
+            const actTotal = selectedActs.reduce((sum, id) => sum + (activities.find(a => a.id === id).price * travelers), 0);
+            const tierTotal = activeTier ? activeTier.price * travelers : 0;
+            const logisticsTotal = logisticsMode === 'inclusive' ? logisticsRate * travelers : 0;
+            
+            const subTotal = (heritageFee * travelers) + totalPermitFiling + actTotal + tierTotal + logisticsTotal;
+            const gst = subTotal * 0.05;
+            const grandTotal = subTotal + gst;
+
+            const openTier = (pkg) => {
+                setActiveTier(pkg);
+                setBookingStep('plan');
+                setTravelers(1);
+                setSelectedActs([]);
+                setLogisticsMode('inclusive');
+                setDocs({});
+                setContact({ name: '', phone: '' });
+            };
+
+            const closeTier = () => setActiveTier(null);
+            const toggleAct = (id) => setSelectedActs(p => p.includes(id) ? p.filter(a => a !== id) : [...p, id]);
+
+            const handleTransmit = () => {
+                setBookingStep('success');
+                setTimeout(() => closeTier(), 4000);
+            };
+
+            // NEW: Handle Review Photo
+            const handleReviewPhoto = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setNewReview({...newReview, img: reader.result});
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            // NEW: Submit Review
+            const submitReview = (e) => {
+                e.preventDefault();
+                setReviews([{...newReview, id: Date.now(), date: "NEWLY LOGGED"}, ...reviews]);
+                setNewReview({ user: '', rating: 5, text: '', drawback: '', img: null });
+                setReviewIdx(0);
+            };
+
+            return (
+                <div className="min-h-screen relative">
+                    {/* MENU TOGGLE */}
+                    <button onClick={() => setMenuOpen(!menuOpen)} className="fixed top-8 right-8 z-[110] w-12 h-12 flex flex-col items-center justify-center gap-1.5 glass rounded-full hover:scale-110 transition-transform border-white/20 group">
+                        <div className={`w-6 h-0.5 bg-white transition-all ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-white transition-all ${menuOpen ? 'opacity-0' : ''}`}></div>
+                        <div className={`w-6 h-0.5 bg-white transition-all ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                    </button>
+
+                    {/* SLIDE MENU */}
+                    <div className={`fixed top-0 right-0 w-full md:w-[500px] h-full bg-[#050505] z-[100] p-12 border-l border-white/5 transition-transform duration-700 ease-in-out ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                        <div className="mt-20 space-y-12">
+                            <section>
+                                <h3 className="text-red-500 font-black text-[10px] tracking-[0.5em] uppercase mb-6 flex items-center gap-2">
+                                    <i data-lucide="shield-check" className="w-4 h-4"></i> Marine Protection Act
+                                </h3>
+                                <p className="text-[11px] leading-relaxed text-white/40 uppercase tracking-[0.2em] italic">
+                                    Corals are protected under Schedule I of the Wildlife Protection Act, 1972. Any person found collecting, trading, or damaging live coral faces <span className="text-white">3 to 7 years in prison</span> and heavy financial penalties.
+                                </p>
+                            </section>
+                            <section>
+                                <h3 className="text-red-500 font-black text-[10px] tracking-[0.5em] uppercase mb-6 flex items-center gap-2">
+                                    <i data-lucide="sparkles" className="w-4 h-4"></i> Island Specialties
+                                </h3>
+                                <div className="grid grid-cols-1 gap-4 text-[10px] uppercase tracking-widest text-white/50">
+                                    <div className="flex gap-4 items-center glass p-4"><i data-lucide="fish" className="w-4 h-4 text-white/20"></i> Tuna Canning & Mas-Gula</div>
+                                    <div className="flex gap-4 items-center glass p-4"><i data-lucide="trees" className="w-4 h-4 text-white/20"></i> Coir & Coconut Handicrafts</div>
+                                    <div className="flex gap-4 items-center glass p-4"><i data-lucide="leaf" className="w-4 h-4 text-white/20"></i> Ecotourism Preservation</div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    {/* MAIN CONTENT */}
+                    <div className={`transition-all duration-500 ${activeTier ? 'blur-sm scale-95 opacity-50 pointer-events-none' : ''}`}>
+                        <div className="p-6 md:p-10 lg:p-16 max-w-7xl mx-auto">
+                            <header className="mb-20">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="h-[1px] w-12 bg-red-500"></div>
+                                    <p className="text-red-500 font-black text-[11px] tracking-[1.2em] uppercase">Kavaratti Island</p>
+                                </div>
+                                <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-[0.9]">
+                                    Expedition<br/>
+                                    <span className="text-white/20">Coral GateWays</span>
+                                </h1>
+                            </header>
+
+                            {/* HERO SLIDER */}
+                            <div className="relative h-[70vh] md:h-[85vh] overflow-hidden mb-16 rounded-xl">
+                                <div className="absolute inset-0">
+                                    {heroSlides.map((slide, index) => (
+                                        <div
+                                            key={index}
+                                            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
+                                        >
+                                            <img src={slide.img} alt={slide.title} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                                            <div className="absolute inset-0 flex items-end pb-16 md:pb-24 px-8 md:px-16">
+                                                <div className="max-w-4xl">
+                                                    <p className="text-[11px] md:text-[13px] font-black uppercase tracking-[0.4em] text-red-400 mb-3">{slide.subtitle}</p>
+                                                    <h2 className="text-4xl md:text-7xl font-black italic tracking-tighter leading-tight text-white">{slide.title}</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+                                    {heroSlides.map((_, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => setCurrentSlide(index)}
+                                            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                                                currentSlide === index ? 'bg-red-500 w-8' : 'bg-white/40 hover:bg-white/70'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Packages Grid */}
+                            <div className="grid lg:grid-cols-3 gap-8 mb-40">
+                                {packages.map(p => (
+                                    <div key={p.id} onClick={() => openTier(p)} className="tier-card glass p-1 rounded-sm group h-[550px] flex flex-col">
+                                        <div className="h-3/5 overflow-hidden rounded-t-sm relative">
+                                            <img src={p.img} className="tier-img w-full h-full object-cover" alt={p.name} />
+                                            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white border border-white/10">
+                                                {p.tier}
+                                            </div>
+                                        </div>
+                                        <div className="p-8 flex flex-col justify-between flex-1 bg-gradient-to-b from-transparent to-black/40">
+                                            <div>
+                                                <h4 className="text-2xl font-black uppercase italic tracking-widest mb-2">{p.name}</h4>
+                                                <p className="text-[10px] text-white/40 uppercase tracking-widest leading-relaxed mb-4">{p.desc}</p>
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <div>
+                                                    <p className="text-[9px] text-white/30 uppercase tracking-widest mb-1">Starting At</p>
+                                                    <p className="text-xl font-black text-red-500">₹{p.price.toLocaleString()}</p>
+                                                </div>
+                                                <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:bg-red-500 group-hover:border-red-500 transition-colors">
+                                                    <i data-lucide="arrow-right" className="w-4 h-4"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* NEW: LANDSCAPE REVIEW SLIDER */}
+                            <div className="mb-40">
+                                <div className="flex justify-between items-center mb-10">
+                                    <h3 className="text-red-500 font-black text-[12px] tracking-[0.5em] uppercase">Expedition Reports</h3>
+                                    <div className="flex gap-4">
+                                        <button onClick={() => setReviewIdx(Math.max(0, reviewIdx - 1))} className="w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-red-500 transition-colors">
+                                            <i data-lucide="chevron-left" className="w-4 h-4"></i>
+                                        </button>
+                                        <button onClick={() => setReviewIdx(Math.min(reviews.length - 1, reviewIdx + 1))} className="w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-red-500 transition-colors">
+                                            <i data-lucide="chevron-right" className="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="relative glass h-[500px] md:h-[400px] rounded-sm overflow-hidden flex flex-col md:flex-row">
+                                    <div className="md:w-1/2 h-1/2 md:h-full review-img-container">
+                                        <img src={reviews[reviewIdx].img || "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=1200"} />
+                                    </div>
+                                    <div className="md:w-1/2 p-8 md:p-16 flex flex-col justify-center bg-black/40">
+                                        <div className="flex gap-1 mb-6">
+                                            {[...Array(5)].map((_, i) => (
+                                                <i key={i} data-lucide="star" className={`w-3 h-3 ${i < reviews[reviewIdx].rating ? 'fill-red-500 text-red-500' : 'text-white/10'}`}></i>
+                                            ))}
+                                        </div>
+                                        <p className="text-xl md:text-3xl font-black italic uppercase tracking-tighter leading-tight mb-8">"{reviews[reviewIdx].text}"</p>
+                                        <div className="pt-8 border-t border-white/10">
+                                            <p className="text-red-500 font-black text-xs tracking-widest">{reviews[reviewIdx].user}</p>
+                                            <p className="text-[10px] text-white/20 uppercase tracking-widest mt-1">Drawback: {reviews[reviewIdx].drawback}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ADD REVIEW FORM */}
+                                <div className="mt-12 glass p-8 md:p-12 rounded-sm max-w-4xl mx-auto">
+                                    <form onSubmit={submitReview} className="grid md:grid-cols-2 gap-6">
+                                        <input type="text" placeholder="Your Name" value={newReview.user} onChange={e => setNewReview({...newReview, user: e.target.value.toUpperCase()})} required className="bg-white/5 border border-white/10 p-4 text-[11px] tracking-widest outline-none focus:border-red-500 uppercase rounded-sm" />
+                                        <div className="flex items-center justify-center gap-4 glass">
+                                            <span className="text-[9px] uppercase tracking-widest opacity-30">Rating</span>
+                                            {[1,2,3,4,5].map(n => (
+                                                <button key={n} type="button" onClick={() => setNewReview({...newReview, rating: n})} className={`w-8 h-8 rounded-full text-[10px] font-black ${newReview.rating >= n ? 'bg-red-500' : 'bg-white/5'}`}>{n}</button>
+                                            ))}
+                                        </div>
+                                        <textarea placeholder="The Experience" value={newReview.text} onChange={e => setNewReview({...newReview, text: e.target.value.toUpperCase()})} required className="md:col-span-2 bg-white/5 border border-white/10 p-4 h-24 text-[11px] tracking-widest outline-none focus:border-red-500 uppercase rounded-sm" />
+                                        <input type="text" placeholder="Service Drawbacks ( if anything experienced )" value={newReview.drawback} onChange={e => setNewReview({...newReview, drawback: e.target.value.toUpperCase()})} className="bg-white/5 border border-white/10 p-4 text-[11px] tracking-widest outline-none focus:border-red-500 uppercase rounded-sm" />
+                                        <label className="flex items-center justify-center border border-dashed border-white/20 hover:border-red-500 cursor-pointer text-[9px] tracking-widest uppercase transition-colors p-4 rounded-sm">
+                                            <input type="file" onChange={handleReviewPhoto} />
+                                            <i data-lucide="camera" className="w-4 h-4 mr-2"></i> {newReview.img ? "Photo Attached" : "Attach Photos"}
+                                        </label>
+                                        <button type="submit" className="md:col-span-2 bg-red-500 py-4 font-black uppercase text-[10px] tracking-[0.4em] hover:bg-white hover:text-black transition-all">Publish to Manifest</button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <footer className="mt-32 border-t border-white/5 pt-12 flex flex-col md:flex-row justify-between gap-12 opacity-80">
+                                <div className="max-w-lg">
+                                    <p className="text-[9px] font-black uppercase tracking-[1em] mb-4">Coral GateWays 2026</p>
+                                    <p className="text-[8px] font-bold uppercase tracking-[0.5em] mb-6">Coral GateWays • Non-Government Entity</p>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-12">
+                                    <div>
+                                        <h3 className="text-red-500 font-black text-[10px] tracking-[0.4em] uppercase mb-4">Terms & Conditions</h3>
+                                        <ul className="text-[10px] text-white/70 space-y-2 leading-relaxed">
+                                            <li>• All bookings are subject to availability and confirmation by our team.</li>
+                                            <li>• Travelers must provide accurate information and required documents (PCC, Aadhaar, photo) for permit processing.</li>
+                                            <li>• Permits are processed through the official ePermit portal; approval is not guaranteed.</li>
+                                            <li>• Final quotes may vary based on real-time availability.</li>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="text-red-500 font-black text-[10px] tracking-[0.4em] uppercase mb-4">Refund Policy</h3>
+                                        <ul className="text-[10px] text-white/70 space-y-2 leading-relaxed">
+                                            <li>• Processing fee, permit fee, and heritage fee are **non-refundable**.</li>
+                                            <li>• Ticket fare is **refundable** as per operator policy.</li>
+                                            <li>• Activity fees (scuba, snorkeling, etc.) are **refundable**.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </footer>
+                        </div>
+                    </div>
+
+                    {/* MODAL OVERLAY (UNCHANGED BOOKING PROCESS) */}
+                    {activeTier && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/90 backdrop-blur-md animate-in">
+                            <div className="glass-panel w-full max-w-6xl h-full md:h-auto md:max-h-[90vh] rounded-xl overflow-hidden flex flex-col md:flex-row relative">
+                                <button onClick={closeTier} className="absolute top-6 right-6 z-20 text-white/30 hover:text-white transition-colors">
+                                    <i data-lucide="x" className="w-8 h-8"></i>
+                                </button>
+
+                                <div className="md:w-7/12 p-8 md:p-12 overflow-y-auto border-r border-white/5">
+                                    {bookingStep === 'plan' && (
+                                        <div className="animate-in">
+                                            <div className="flex items-center gap-3 mb-8">
+                                                <span className="text-[9px] font-black bg-red-500 text-white px-2 py-1 rounded-sm uppercase tracking-widest">Step 01</span>
+                                                <span className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em]">Configuration</span>
+                                            </div>
+                                            <h2 className="text-4xl font-black uppercase italic tracking-tighter mb-2">{activeTier.name}</h2>
+                                            <p className="text-[11px] text-white/40 uppercase tracking-widest mb-10">{activeTier.desc}</p>
+
+                                            {/* Travelers */}
+                                            <div className="mb-12">
+                                                <h3 className="text-[10px] font-black uppercase text-red-500 tracking-[0.3em] mb-6 flex items-center gap-2">
+                                                    <i data-lucide="users" className="w-4 h-4"></i> Expedition Party
+                                                </h3>
+                                                <div className="flex items-center gap-8 glass p-6 border-white/10 rounded-sm w-full md:w-max">
+                                                    <div className="text-left">
+                                                        <p className="text-[9px] font-black uppercase text-white/50 tracking-[0.3em] mb-1">Total Travelers</p>
+                                                        <p className="text-[8px] text-red-400 italic">Permit batch size: 6</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <button onClick={() => setTravelers(Math.max(1, travelers - 1))} className="w-8 h-8 flex items-center justify-center glass rounded-full">-</button>
+                                                        <span className="text-2xl font-black w-8 text-center">{travelers}</span>
+                                                        <button onClick={() => setTravelers(travelers + 1)} className="w-8 h-8 flex items-center justify-center glass rounded-full">+</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Logistics */}
+                                            <div className="mb-12">
+                                                <h3 className="text-[10px] font-black uppercase text-red-500 tracking-[0.3em] mb-6 flex items-center gap-2">
+                                                    <i data-lucide="car" className="w-4 h-4"></i> Logistics & Sustenance
+                                                </h3>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div onClick={() => setLogisticsMode('inclusive')} className={`logistics-card p-6 rounded-sm relative group ${logisticsMode === 'inclusive' ? 'logistics-selected' : 'glass'}`}>
+                                                        <h4 className="text-lg font-black uppercase italic tracking-wider mb-2">Concierge</h4>
+                                                        <p className="text-[9px] text-white/40 uppercase tracking-widest leading-relaxed">Full Board Meals + Transfers.</p>
+                                                    </div>
+                                                    <div onClick={() => setLogisticsMode('self')} className={`logistics-card p-6 rounded-sm relative group ${logisticsMode === 'self' ? 'logistics-selected' : 'glass'}`}>
+                                                        <h4 className="text-lg font-black uppercase italic tracking-wider mb-2">Nomad</h4>
+                                                        <p className="text-[9px] text-white/40 uppercase tracking-widest leading-relaxed">Permits only.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Activities */}
+                                            <div>
+                                                <h3 className="text-[10px] font-black uppercase text-red-500 tracking-[0.3em] mb-6 flex items-center gap-2">
+                                                    <i data-lucide="milestone" className="w-4 h-4"></i> Add-on Experiences
+                                                </h3>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    {activities.map(act => (
+                                                        <div key={act.id} onClick={() => toggleAct(act.id)} className={`act-pill px-5 py-4 flex items-center justify-between rounded-sm ${selectedActs.includes(act.id) ? 'act-selected' : 'glass'}`}>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest">{act.name}</span>
+                                                            <span className="text-[9px] opacity-60">₹{act.price}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {bookingStep === 'book' && (
+                                        <div className="animate-in">
+                                            <div className="flex items-center gap-3 mb-8">
+                                                <button onClick={() => setBookingStep('plan')} className="text-[9px] font-black bg-white/10 px-2 py-1 rounded-sm uppercase">Back</button>
+                                                <span className="text-[9px] font-black bg-red-500 text-white px-2 py-1 rounded-sm uppercase">Step 02</span>
+                                            </div>
+                                            <h2 className="text-3xl font-black uppercase italic tracking-tighter mb-8">Finalize Manifest</h2>
+                                            <div className="space-y-8">
+                                                <input type="text" placeholder="Legal Full Name" className="bg-white/5 border border-white/10 p-4 text-[11px] tracking-widest w-full rounded-sm uppercase" />
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {['Aadhaar F', 'Aadhaar B', 'Photo', 'PCC Report'].map(l => (
+                                                        <div key={l} className="glass border-dashed border-white/10 p-6 text-center rounded-sm">
+                                                            <p className="text-[9px] font-black uppercase tracking-tighter">{l}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {bookingStep === 'success' && (
+                                        <div className="h-full flex flex-col items-center justify-center text-center animate-in">
+                                            <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mb-6">
+                                                <i data-lucide="check" className="w-10 h-10 text-green-500"></i>
+                                            </div>
+                                            <h2 className="text-3xl font-black uppercase italic tracking-tighter mb-2">Transmission Complete</h2>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* RIGHT COLUMN: BUDGET */}
+                                <div className="md:w-5/12 bg-[#080808] p-8 md:p-12 flex flex-col justify-between border-l border-white/5">
+                                    <div>
+                                        <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.3em] mb-8">Live Ledger</h3>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between text-[11px] uppercase tracking-widest">
+                                                <span className="text-white/40">Tier Base ({travelers}x)</span>
+                                                <span className="font-bold">₹{tierTotal.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between text-[11px] uppercase tracking-widest">
+                                                <span className="text-white/40">Permit Filing</span>
+                                                <span className="font-bold">₹{totalPermitFiling.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between text-[11px] uppercase tracking-widest">
+                                                <span className="text-white/40">Heritage Fee</span>
+                                                <span className="font-bold">₹{(heritageFee * travelers).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xl font-black italic pt-4 border-t border-white/10">
+                                                <span className="text-red-500">Total</span>
+                                                <span className="text-white">₹{grandTotal.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-12">
+                                        {bookingStep === 'plan' && (
+                                            <button onClick={() => setBookingStep('book')} className="w-full bg-white text-black py-4 font-black uppercase text-[10px] tracking-[0.4em]">Proceed to Intake</button>
+                                        )}
+                                        {bookingStep === 'book' && (
+                                            <button onClick={handleTransmit} className="w-full bg-red-500 text-white py-4 font-black uppercase text-[10px] tracking-[0.4em]">Transmit Package</button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
